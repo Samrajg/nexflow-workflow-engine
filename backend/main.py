@@ -1,9 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import Base, engine
-from routers import workflows
 
-# Create all tables
+# Import all models first so relationships resolve
+from models.workflow import Workflow
+from models.step import Step
+from models.rule import Rule
+from models.execution import Execution
+
+from routers import workflows, steps
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -12,7 +18,6 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS for Next.js frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -21,8 +26,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Routers
 app.include_router(workflows.router)
+app.include_router(steps.router)
 
 @app.get("/", tags=["Health"])
 def health_check():
