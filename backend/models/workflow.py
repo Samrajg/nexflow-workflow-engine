@@ -18,3 +18,6 @@ class Workflow(Base):
     created_by = Column(UUID(as_uuid=True), nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    steps = relationship("Step", back_populates="workflow", foreign_keys="Step.workflow_id", cascade="all, delete-orphan")
+    executions = relationship("Execution", back_populates="workflow", cascade="all, delete-orphan")
