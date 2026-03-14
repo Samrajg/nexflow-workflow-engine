@@ -7,7 +7,7 @@ from models.step import Step
 from models.rule import Rule
 from models.execution import Execution
 
-from routers import workflows, steps, rules
+from routers import workflows, steps, rules, executions
 
 Base.metadata.create_all(bind=engine)
 
@@ -28,6 +28,7 @@ app.add_middleware(
 app.include_router(workflows.router)
 app.include_router(steps.router)
 app.include_router(rules.router)
+app.include_router(executions.router)
 
 @app.get("/", tags=["Health"])
 def health_check():
