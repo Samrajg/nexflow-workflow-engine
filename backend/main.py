@@ -2,13 +2,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import Base, engine
 
-# Import all models first so relationships resolve
 from models.workflow import Workflow
 from models.step import Step
 from models.rule import Rule
 from models.execution import Execution
 
-from routers import workflows, steps
+from routers import workflows, steps, rules
 
 Base.metadata.create_all(bind=engine)
 
@@ -28,6 +27,7 @@ app.add_middleware(
 
 app.include_router(workflows.router)
 app.include_router(steps.router)
+app.include_router(rules.router)
 
 @app.get("/", tags=["Health"])
 def health_check():
