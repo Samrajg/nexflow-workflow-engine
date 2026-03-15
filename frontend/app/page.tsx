@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { getWorkflows, deleteWorkflow } from "@/lib/api";
+import { getWorkflows } from "@/lib/api";
 import Link from "next/link";
 
 interface Workflow {
@@ -16,13 +16,12 @@ export default function Home() {
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
   const fetchWorkflows = async () => {
     setLoading(true);
     try {
-      const res = await getWorkflows(page, search);
+      const res = await getWorkflows(page, "");
       setWorkflows(res.data.workflows);
       setTotal(res.data.total);
     } catch (err) {
@@ -34,131 +33,88 @@ export default function Home() {
 
   useEffect(() => {
     fetchWorkflows();
-  }, [page, search]);
-
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Delete workflow "${name}"?`)) return;
-    try {
-      await deleteWorkflow(id);
-      fetchWorkflows();
-    } catch (err) {
-      alert("Failed to delete workflow");
-    }
-  };
+  }, [page]);
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white p-8">
+    <div className="min-h-screen bg-gray-950 text-white px-8 py-10">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Workflow Engine</h1>
-          <p className="text-gray-400 mt-1">Manage and execute your workflows</p>
+      <div className="mb-10">
+        <h1 className="text-3xl font-bold text-white">Workflows</h1>
+        <p className="text-gray-400 mt-1">Select a workflow to execute</p>
+      </div>
+
+      {/* Loading */}
+      {loading && (
+        <div className="flex items-center justify-center py-20">
+          <div className="w-8 h-8 border-2 border-violet-600 border-t-transparent rounded-full animate-spin" />
         </div>
-        <Link
-          href="/workflows/new"
-          className="bg-violet-600 hover:bg-violet-700 text-white px-5 py-2.5 rounded-lg font-medium transition"
-        >
-          + New Workflow
-        </Link>
-      </div>
+      )}
 
-      {/* Search */}
-      <div className="mb-6">
-        <input
-          type="text"
-          placeholder="Search workflows..."
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          className="w-full max-w-md bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-violet-500"
-        />
-      </div>
+      {/* Empty */}
+      {!loading && workflows.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="w-16 h-16 bg-gray-800 rounded-2xl flex items-center justify-center mb-4">
+            <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+          </div>
+          <p className="text-gray-500">No workflows found.</p>
+        </div>
+      )}
 
-      {/* Table */}
-      <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-800 text-gray-400 text-sm">
-              <th className="text-left px-6 py-4 font-medium">Name</th>
-              <th className="text-left px-6 py-4 font-medium">Version</th>
-              <th className="text-left px-6 py-4 font-medium">Status</th>
-              <th className="text-left px-6 py-4 font-medium">Created</th>
-              <th className="text-left px-6 py-4 font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={5} className="text-center py-12 text-gray-500">
-                  Loading...
-                </td>
-              </tr>
-            ) : workflows.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="text-center py-12 text-gray-500">
-                  No workflows found. Create your first one!
-                </td>
-              </tr>
-            ) : (
-              workflows.map((wf) => (
-                <tr
-                  key={wf.id}
-                  className="border-b border-gray-800 hover:bg-gray-800/50 transition"
-                >
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-white">{wf.name}</div>
-                    {wf.description && (
-                      <div className="text-sm text-gray-500 mt-0.5">{wf.description}</div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="bg-gray-800 text-gray-300 text-xs px-2.5 py-1 rounded-full">
-                      v{wf.version}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                      wf.is_active
-                        ? "bg-green-900/50 text-green-400"
-                        : "bg-gray-800 text-gray-500"
-                    }`}>
-                      {wf.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-gray-400 text-sm">
-                    {new Date(wf.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex gap-2">
-                      <Link
-                        href={`/workflows/${wf.id}`}
-                        className="bg-gray-800 hover:bg-gray-700 text-white text-sm px-3 py-1.5 rounded-lg transition"
-                      >
-                        Edit
-                      </Link>
-                      <Link
-                        href={`/execute/${wf.id}`}
-                        className="bg-violet-600/20 hover:bg-violet-600/40 text-violet-400 text-sm px-3 py-1.5 rounded-lg transition"
-                      >
-                        Execute
-                      </Link>
-                      <button
-                        onClick={() => handleDelete(wf.id, wf.name)}
-                        className="bg-red-900/20 hover:bg-red-900/40 text-red-400 text-sm px-3 py-1.5 rounded-lg transition"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      {/* Workflow Cards Grid */}
+      {!loading && workflows.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {workflows.map((wf) => (
+            <div
+              key={wf.id}
+              className="relative rounded-2xl border border-white/10 p-6 hover:border-violet-500/50 transition-all duration-300 group"
+              style={{
+                background: "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+                boxShadow: "0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)",
+                backdropFilter: "blur(12px)"
+              }}
+            >
+              {/* Glow on hover */}
+              <div className="absolute inset-0 rounded-2xl bg-violet-600/0 group-hover:bg-violet-600/5 transition-all duration-300" />
+
+              {/* Workflow icon */}
+              <div className="w-12 h-12 rounded-xl bg-violet-600/20 border border-violet-500/20 flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+
+              {/* Name & description */}
+              <h2 className="text-white font-semibold text-lg mb-1 leading-tight">
+                {wf.name}
+              </h2>
+              {wf.description && (
+                <p className="text-gray-500 text-sm mb-5 line-clamp-2">
+                  {wf.description}
+                </p>
+              )}
+              {!wf.description && <div className="mb-5" />}
+
+              {/* Execute button */}
+              <Link
+                href={`/execute/${wf.id}`}
+                className="relative z-10 w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-all duration-200 group-hover:shadow-lg group-hover:shadow-violet-600/20"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Execute Workflow
+              </Link>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Pagination */}
       {total > 10 && (
-        <div className="flex items-center justify-between mt-6">
+        <div className="flex items-center justify-between mt-10">
           <p className="text-gray-500 text-sm">
             Showing {(page - 1) * 10 + 1}–{Math.min(page * 10, total)} of {total}
           </p>
@@ -180,13 +136,6 @@ export default function Home() {
           </div>
         </div>
       )}
-
-      {/* Audit Log Link */}
-      <div className="mt-8 text-center">
-        <Link href="/audit" className="text-gray-500 hover:text-gray-300 text-sm transition">
-          View Audit Log →
-        </Link>
-      </div>
     </div>
   );
 }

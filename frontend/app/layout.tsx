@@ -6,8 +6,15 @@ import Navbar from "@/components/Navbar";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Halleyx Workflow Engine",
+  title: "Nexflow",
   description: "Dynamic workflow engine with rules and approvals",
+  icons: {
+    icon: [
+      { url: "/Nexflowlogo.png", type: "image/png" }
+    ],
+    shortcut: ["/Nexflowlogo.png"],
+    apple: ["/Nexflowlogo.png"],
+  },
 };
 
 export default function RootLayout({
