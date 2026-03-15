@@ -1,25 +1,35 @@
 from typing import Any, Dict, Optional
-import re
+from engine.currency import convert_to_inr
+
 
 def evaluate_condition(condition: str, input_data: Dict[str, Any]) -> bool:
     if condition.strip().upper() == "DEFAULT":
         return True
 
-    # Replace && with 'and', || with 'or'
     expr = condition.replace("&&", " and ").replace("||", " or ")
-
-    # Replace != with Python !=
     expr = expr.replace("!=", " != ")
 
-    # Safe allowed names — only input data keys + builtins we allow
     safe_globals = {"__builtins__": {}}
     safe_locals = dict(input_data)
+
+    # Add amount_inr to locals if amount and country exist
+    if "amount" in input_data and "country" in input_data:
+        try:
+            amount_inr = convert_to_inr(
+                float(input_data["amount"]),
+                str(input_data["country"])
+            )
+            safe_locals["amount_inr"] = amount_inr
+        except Exception:
+            pass
 
     try:
         result = eval(expr, safe_globals, safe_locals)
         return bool(result)
     except Exception as e:
-        raise ValueError(f"Rule evaluation error: {e} | Expression: {expr} | Data: {input_data}")
+        raise ValueError(
+            f"Rule evaluation error: {e} | Expression: {expr} | Data: {input_data}"
+        )
 
 
 def evaluate_rules(rules: list, input_data: Dict[str, Any]) -> Optional[Dict]:
