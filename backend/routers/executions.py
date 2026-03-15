@@ -9,6 +9,7 @@ from models.execution import Execution
 from models.workflow import Workflow
 from schemas.execution import ExecutionCreate, ExecutionResponse, ExecutionListResponse
 from engine.executor import run_execution, approve_step
+from engine.currency import convert_to_inr
 
 router = APIRouter(
     prefix="/api/executions",
@@ -32,11 +33,23 @@ def start_execution(payload: ExecutionCreate, db: Session = Depends(get_db)):
     if not workflow.first_step_id:
         raise HTTPException(status_code=400, detail="Workflow has no steps defined")
 
+    # Enrich input with amount_inr automatically
+    enriched_input = dict(payload.input_data)
+    if "amount" in enriched_input and "country" in enriched_input:
+        try:
+            amount_inr = convert_to_inr(
+                float(enriched_input["amount"]),
+                str(enriched_input["country"])
+            )
+            enriched_input["amount_inr"] = round(amount_inr, 2)
+        except Exception:
+            pass
+
     execution = Execution(
         workflow_id=payload.workflow_id,
         workflow_version=workflow.version,
         status="pending",
-        input_data=payload.input_data,
+        input_data=enriched_input,
         step_logs=[],
         started_by=payload.started_by,
         retry_count=0
